@@ -4,6 +4,7 @@ This file will contain your the code for your problems.
 
 import numpy as np
 import cv2
+import random
 
 class Game:
     def __init__(self, problem, pZero, pOne,verbose=True):
@@ -32,7 +33,112 @@ class Game:
       if self.verbose:
          self.problem.showState(4000)
       return wIndex
-              
+# New class of game: snake
+class Snake:
+   """
+   Grid:
+      0:  Empty cell
+      1:  Snake head
+      2:  Snake body
+      -1: Apple
+
+   Actions:
+      0:  Up    (-1,  0)
+      1:  Down  ( 1,  0)
+      2:  Left  ( 0, -1)
+      3:  Right ( 0,  1)
+   """
+   UP = 0
+   DOWN = 1
+   LEFT = 2
+   RIGHT = 3
+
+   ACTIONS = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+   ACTION_NAMES = {0: "UP", 1: "DOWN", 2: "LEFT", 3: "RIGHT"}
+   OPPOSITES = {0: 1, 1: 0, 2: 3, 3: 2}
+   def __init__(self):
+      self.state = np.zeros((20,20)) # 20 by 20 grid
+      self.ticks = -1
+
+   def getLegalMoves(self, state=None):
+      if state is None:
+         state = self.state
+      moves = []
+      return moves
+# New class of game: ball catch
+class BallCatch:
+   """
+    Actions:
+      0: Move LEFT   (dx = -1)
+      1: STAY        (dx =  0)
+      2: Move RIGHT  (dx = +1)
+    """
+   LEFT = 0
+   STAY = 1
+   RIGHT = 2
+
+   ACTIONS = [-1, 0, 1]
+   ACTION_NAMES = {0: "LEFT", 1: "STAY", 2: "RIGHT"}
+   def __init__(self):
+      self.state = np.zeros((20,20)) # 20 by 20 grid
+      self.ticks = -1
+
+   def getLegalMoves(self, state=None):
+      if state is None:
+         state = self.state
+      moves = []
+      return moves
+
+# New class of game: Pac-Man
+class PacMan:
+   """
+   Similar to snake but different encodings for the grid
+   Grid:
+      0: Empty corridor
+      1: Pac-Man
+      2: Wall
+      3: Ghost
+   -1: Food pellet
+   
+   Actions:
+   0: UP    (-1,  0)
+   1: DOWN  ( 1,  0)
+   2: LEFT  ( 0, -1)
+   3: RIGHT ( 0,  1)
+   """
+   UP = 0
+   DOWN = 1
+   LEFT = 2
+   RIGHT = 3
+
+   ACTIONS = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+   ACTION_NAMES = {0: "UP", 1: "DOWN", 2: "LEFT", 3: "RIGHT"}
+   OPPOSITES = {0: 1, 1: 0, 2: 3, 3: 2}
+
+   # 11x11 grid with # as walls, G as ghosts, P as Pac-Man, . as food pellets
+   DEFAULT_LAYOUT = [
+      "###########",
+      "#....#....#",
+      "#.##.#.##.#",
+      "#.........#",
+      "#.##.#.##.#",
+      "#....G....#",
+      "#.##.#.##.#",
+      "#....#....#",
+      "#.##...##.#",
+      "#....P....#",
+      "###########",
+   ]
+   def __init__(self):
+      self.state = np.zeros((20,20)) # 20 by 20 grid
+      self.ticks = -1
+
+   def getLegalMoves(self, state=None):
+      if state is None:
+         state = self.state
+      moves = []
+      return moves
+
 class TicTacToe:
    def __init__(self):
       self.state = np.zeros((3,3))      
