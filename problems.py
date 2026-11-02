@@ -5,11 +5,19 @@ This file will contain your the code for your problems.
 import numpy as np
 import cv2
 import random
-
+# Originally for two player adversial games,  need to adapt to or support single agent/player
 class Game:
     def __init__(self, problem, pZero, pOne,verbose=True):
       self.problem = problem      
-      self.players = [pZero,pOne]   
+      #self.players = [pZero,pOne] defaulted to two players 
+      if isinstance(pOne, bool):
+         verbose = pOne
+         pOne = None
+
+      if pOne is None:
+         self.players = [pZero]          # Single-player environment
+      else:
+         self.players = [pZero, pOne]    # Two-player adversarial environment  
       self.verbose = verbose   
       if self.verbose:
          self.problem.showState()               
@@ -22,14 +30,24 @@ class Game:
             self.problem.showState()
             print(f"Move {self.problem.ticks}:")
             print(self.problem.state)
-         pCur = np.abs(pCur-1)
+         if len(self.players) > 1: # Now need condition for more than 1 player
+            pCur = np.abs(pCur-1)  # Switch between the two players
         
       wIndex = self.problem.getWinner()
-      winner = self.players[wIndex]
-      if wIndex == -1:
-         winner = "DRAW"
-      #display final state
-      print(f"The Winner is {winner} ({wIndex})!")
+      if len(self.players) > 1:
+         # code for 2 player resolution
+         if wIndex == -1:
+            winner = "DRAW"
+         else:
+            winner = self.players[wIndex]
+         #display final state
+         print(f"The Winner is {winner} ({wIndex})!")
+      else:
+         # code for single player resolution, no winner, score needed
+         score = getattr(self.problem, 'score', 0)
+         status = "SUCCESS" if wIndex == 0 else "TERMINATED"
+         print(f"{status}! Final Score: {score} (Ticks: {self.problem.ticks})")
+
       if self.verbose:
          self.problem.showState(4000)
       return wIndex
