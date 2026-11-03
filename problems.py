@@ -262,11 +262,27 @@ class PacMan:
       if new_pac not in self.walls:   # Cannot move into wall, no position change if wall is in the way
          self.pacman = new_pac 
 
-      # Ghost collision
+      # Pacman steps into ghost, score penalty for dying more than idling, game ends
+      for ghost in self.ghosts:
+         if self.pacman == ghost['pos']:
+            self.score -= 50
+            self.terminal = True
+            self._updateState()
+            return
 
-      # Pacman eats pellet
+      # Pacman eats pellet" pacman steps into pellet, remove the pellet and update score
+      if self.pacman in self.pellets:
+         self.pellets.remove(self.pacman)
+         self.score += 1
+         # In case all pellets are eaten, the game ends successfully, extra bonus score!
+         if len(self.pellets) == 0:
+            self.terminal = True
+            self.score += 1000 
+            self._updateState()
+            return
+      
 
-      # Ghost step, random movement, collision with pacman
+      # Ghost step, random movement, ghost steps into pacman
 
 
 
