@@ -21,6 +21,19 @@ algorithm and one player uses another. If your problem is snake, you might show 
 # game = prb.Game(snake_env, alg.RandomAgent(), verbose=True)
 # game.playGame()
 
-pacman_env = prb.PacMan(max_idle_ticks=30, max_ticks=50)
-game = prb.Game(pacman_env, pZero=alg.RandomAgent(), pOne=alg.RandomAgent(), verbose=True)
+# Smaller than default and trying to force collision
+DEBUG_LAYOUT = [
+        "#####",
+        "#...#",
+        "#.#.#",
+        "#.G.#",
+        "#.#.#",
+        "#...#",
+        "#.#.#",
+        "#.P.#",
+        "#####"
+    ]
+
+pacman_env = prb.PacMan(layout=DEBUG_LAYOUT, ghost=alg.RandomAgentGhost(), max_idle_ticks=30, max_ticks=50)
+game = prb.Game(pacman_env, pZero=alg.RandomAgent(), pOne=alg.RandomAgentGhost(), verbose=True)
 game.playGame()

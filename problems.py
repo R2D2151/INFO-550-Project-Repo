@@ -37,13 +37,16 @@ class Game:
         
       wIndex = self.problem.getWinner()
       if len(self.players) > 1:
-         # code for 2 player resolution
+         # code for 2 player resolution (For pacman its the Pacman vs Ghost) 
+         # Pacman wins if it eats all the pellets or ends with a positive score, Ghost wins if Pacman dies with 0 score
          if wIndex == -1:
-            winner = "DRAW"
+            winner = "BLINKY" # Red ghost's name
          else:
-            winner = self.players[wIndex]
+            winner = "PAC-MAN" #self.players[wIndex]   Configured just for Pac-Man
          #display final state
+         score = getattr(self.problem, 'score', 0)
          print(f"The Winner is {winner} ({wIndex})!")
+         print(f"Final Score: {score} (Ticks: {self.problem.ticks})")
       else:
          # code for single player resolution, no winner, score needed
          score = getattr(self.problem, 'score', 0)
@@ -149,6 +152,7 @@ class PacMan:
       "#....P....#",
       "###########",
    ]
+
    def __init__(self, layout=None, ghost= None, max_ticks=300, max_idle_ticks=80):
       self.raw_layout = layout if layout is not None else self.DEFAULT_LAYOUT
       self.height = len(self.raw_layout)
@@ -164,6 +168,7 @@ class PacMan:
       self.terminal = False
       self.ticks = -1
       self.pacman_dir = self.RIGHT # Pacman moving right by default
+      self.ghost_dir = self.LEFT # Ghost moving left by default
 
       # Initialize walls, food pellets, Pac-Man, and ghosts based on the layout
       self.walls = set()
@@ -228,8 +233,8 @@ class PacMan:
       return legal_moves
    
    #separate legal moves for pacman and ghost, pacman cannot move into walls, ghost cannot move into walls, same logic used but does not invoke terminal state
-   def getGhostLegalMoves(self, ghost_pos):
-      gr, gc = ghost_pos
+   def getGhostLegalMoves(self):
+      gr, gc = self.ghosts[0]['position']  
       legal_moves = []
       for action_idx, (dr, dc) in enumerate(self.ACTIONS):
          new_r, new_c = gr + dr, gc + dc
@@ -265,7 +270,7 @@ class PacMan:
       # Pacman steps into ghost, score penalty for dying more than idling, game ends
       for ghost in self.ghosts:
          if self.pacman == ghost['position']:
-            self.score -= 50
+            self.score -= 10
             self.terminal = True
             self._updateState()
             return
@@ -277,7 +282,7 @@ class PacMan:
          # In case all pellets are eaten, the game ends successfully, extra bonus score!
          if len(self.pellets) == 0:
             self.terminal = True
-            self.score += 1000 
+            self.score += 100 
             self._updateState()
             return
       
@@ -285,7 +290,7 @@ class PacMan:
       # Ghost step, random movement, ghost steps into pacman
       # Treating like 2 players, so ghost will also have a move, but it will be random for now, and the ghost will not eat pellets or walls, just move around
       ghost_move_idx = move if isinstance(move, int) else self.ACTIONS.index(move)
-      ghost_legal_moves = self.getGhostLegalMoves(ghost['position'])
+      ghost_legal_moves = self.getGhostLegalMoves()
       if ghost_move_idx not in ghost_legal_moves:
          ghost_move_idx = self.ghost_dir  # If the move is illegal, continue in the current direction
 
@@ -315,11 +320,44 @@ class PacMan:
    def getWinner(self):
       return 0 if (len(self.pellets) == 0 or self.score > 0) else -1
 
-
-
    def showState(self, ms=150, state=None):
       if state is None:
          state = self.state  
+
+      cell_size = 50
+      screen = np.zeros((self.height * cell_size, self.width * cell_size, 3), dtype=np.uint8)
+
+      # Draw walls (gray)
+      for r, c, in self.walls:
+         cv2.rectangle(screen, (c * cell_size, r * cell_size),
+                        ((c + 1) * cell_size, (r + 1) * cell_size), (128, 128, 128), -1)
+
+      # Draw pellets (while)
+      for r, c in self.pellets:
+         cv2.circle(screen, (c * cell_size + cell_size // 2, r * cell_size + cell_size // 2), cell_size // 4, (255, 255, 255), -1)
+
+      # Draw ghosts (red)
+      for ghost in self.ghosts:
+         gr, gc = ghost['position']
+         cx = gc * cell_size + cell_size // 2
+         cy = gr * cell_size + cell_size // 2
+         cv2.circle(screen, (cx, cy), cell_size // 2 - 2, (0, 0, 255), -1)
+
+      # Draw Pac-Man (yellow)
+      pr, pc = self.pacman
+      cx = pc * cell_size + cell_size // 2
+      cy = pr * cell_size + cell_size // 2
+      cv2.circle(screen, (cx, cy), cell_size // 2 - 2, (0, 255, 255), -1)
+
+      try:
+         cv2.imshow('Pac-Man', screen)
+         key = cv2.waitKey(ms) & 0xFF
+         if key == 27 or key == ord('q'):
+               self.terminal = True
+      except Exception:
+         pass
+
+
 
 
 class TicTacToe:
