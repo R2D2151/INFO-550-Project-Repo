@@ -239,14 +239,30 @@ class PacMan:
       return legal_moves
 
 
-"""
+   # Executing pacman movement, collision with ghost (wall collision does nothing), pellets eaten, ghost movement and it's collision with pacman.
+   # Idle ticks and max ticks are also checked here, and the state is updated at the end of the function.
    def doMove(self, move):
+      if self.terminal:
+         return
+
+      self.ticks += 1
+      self.idle_ticks += 1
+
+      # Timeout check
+      if self.idle_ticks >= self.max_idle_ticks:
+         self.terminal = True
+
+      self._updateState()
 
    def isTerminal(self, state=None):
         return self.terminal
-   
-   def getWinner(self):
 
+   # Return 0 if all pellets eaten or ended with positive score (pacman dies from ghost or ticks run out), -1 otherwise.
+   def getWinner(self):
+      return 0 if (len(self.pellets) == 0 or self.score > 0) else -1
+
+
+"""
    def showState(self, ms=150, state=None):
 """
 
