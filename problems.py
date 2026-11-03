@@ -147,8 +147,18 @@ class PacMan:
       "#....P....#",
       "###########",
    ]
-   def __init__(self):
-      self.state = np.zeros((20,20)) # 20 by 20 grid
+   def __init__(self, layout=None, max_ticks=300, max_idle_ticks=80):
+      self.raw_layout = layout if layout is not None else self.DEFAULT_LAYOUT
+      self.height = len(self.raw_layout)
+      self.width = len(self.raw_layout[0])
+      self.max_ticks = max_ticks
+      self.max_idle_ticks = max_idle_ticks
+      self.reset()
+
+   def reset(self):
+      self.idle_ticks = 0
+      self.score = 0
+      self.terminal = False
       self.ticks = -1
 
    def getLegalMoves(self, state=None):
@@ -156,6 +166,20 @@ class PacMan:
          state = self.state
       moves = []
       return moves
+"""
+   def _updateState(self):
+
+   def getLegalMoves(self, state=None):
+
+   def doMove(self, move):
+
+   def isTerminal(self, state=None):
+        return self.terminal
+   
+   def getWinner(self):
+
+   def showState(self, ms=150, state=None):
+"""
 
 class TicTacToe:
    def __init__(self):
