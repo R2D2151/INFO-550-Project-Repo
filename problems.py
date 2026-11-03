@@ -207,7 +207,7 @@ class PacMan:
       for r, c in self.pellets:
          self.state[r, c] = -1
       for ghost in self.ghosts:
-         gr, gc = ghost['pos']
+         gr, gc = ghost['position']
          self.state[gr, gc] = 3
       pr, pc = self.pacman
       self.state[pr, pc] = 1
@@ -264,7 +264,7 @@ class PacMan:
 
       # Pacman steps into ghost, score penalty for dying more than idling, game ends
       for ghost in self.ghosts:
-         if self.pacman == ghost['pos']:
+         if self.pacman == ghost['position']:
             self.score -= 50
             self.terminal = True
             self._updateState()
@@ -283,16 +283,24 @@ class PacMan:
       
 
       # Ghost step, random movement, ghost steps into pacman
+      # Treating like 2 players, so ghost will also have a move, but it will be random for now, and the ghost will not eat pellets or walls, just move around
+      ghost_move_idx = move if isinstance(move, int) else self.ACTIONS.index(move)
+      ghost_legal_moves = self.getGhostLegalMoves(ghost['position'])
+      if ghost_move_idx not in ghost_legal_moves:
+         ghost_move_idx = self.ghost_dir  # If the move is illegal, continue in the current direction
 
-      # Same logic for ghost into pacman
-      if ghost['pos']  == self.pacman:
-         self.score -= 50
-         self.terminal = True
-         self._updateState()
-         return
-
-
-
+      # Moving pacman to new position
+      self.ghost_dir = ghost_move_idx
+      dr, dc = self.ACTIONS[ghost_move_idx]
+      new_ghost = (ghost['position'][0] + dr, ghost['position'][1] + dc)
+      if new_ghost not in self.walls:   # Cannot move into wall, no position change if wall is in the way
+         ghost['position'] = new_ghost 
+         # Same logic for ghost into pacman
+         if ghost['position']  == self.pacman:
+            self.score -= 50
+            self.terminal = True
+            self._updateState()
+            return
 
       # Timeout check
       if self.idle_ticks >= self.max_idle_ticks:
@@ -308,9 +316,11 @@ class PacMan:
       return 0 if (len(self.pellets) == 0 or self.score > 0) else -1
 
 
-"""
+
    def showState(self, ms=150, state=None):
-"""
+      if state is None:
+         state = self.state  
+
 
 class TicTacToe:
    def __init__(self):

@@ -14,5 +14,13 @@ algorithm and one player uses another. If your problem is snake, you might show 
 (whichever comes first).
 '''
 
-demoGame = prb.Game(prb.TicTacToe(),alg.RandomAgent(),alg.RandomAgent())
-demoGame.playGame()
+#demoGame = prb.Game(prb.TicTacToe(),alg.RandomAgent(),alg.RandomAgent())
+#demoGame.playGame()
+
+# snake_env = prb.Snake(height=8, width=8, num_apples=30, max_idle_ticks=30, max_ticks=40)
+# game = prb.Game(snake_env, alg.RandomAgent(), verbose=True)
+# game.playGame()
+
+pacman_env = prb.PacMan(max_idle_ticks=30, max_ticks=50)
+game = prb.Game(pacman_env, pZero=alg.RandomAgent(), pOne=alg.RandomAgent(), verbose=True)
+game.playGame()
