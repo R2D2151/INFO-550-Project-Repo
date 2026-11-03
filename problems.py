@@ -244,9 +244,32 @@ class PacMan:
    def doMove(self, move):
       if self.terminal:
          return
-
+      
       self.ticks += 1
       self.idle_ticks += 1
+
+      # Same move tracking as snake, but pacman can turn 180 degrees
+      # return list of move, up down, left, right
+      move_idx = move if isinstance(move, int) else self.ACTIONS.index(move)
+      legal_moves = self.getLegalMoves()
+      if move_idx not in legal_moves:
+         move_idx = self.pacman_dir  # If the move is illegal, continue in the current direction
+
+      # Moving pacman to new position
+      self.pacman_dir = move_idx
+      dr, dc = self.ACTIONS[move_idx]
+      new_pac = (self.pacman[0] + dr, self.pacman[1] + dc)
+      if new_pac not in self.walls:   # Cannot move into wall, no position change if wall is in the way
+         self.pacman = new_pac 
+
+      # Ghost collision
+
+      # Pacman eats pellet
+
+      # Ghost step, random movement, collision with pacman
+
+
+
 
       # Timeout check
       if self.idle_ticks >= self.max_idle_ticks:
