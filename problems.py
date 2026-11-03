@@ -5,6 +5,8 @@ This file will contain your the code for your problems.
 import numpy as np
 import cv2
 import random
+
+from algorithms import RandomAgent
 # Originally for two player adversial games,  need to adapt to or support single agent/player
 class Game:
     def __init__(self, problem, pZero, pOne,verbose=True):
@@ -107,16 +109,16 @@ class BallCatch:
       moves = []
       return moves
 
-# New class of game: Pac-Man
+# New class of game: Pac-Man, for now ghost will also be random agent along with pacman
 class PacMan:
    """
    Similar to snake but different encodings for the grid
    Grid:
-      0: Empty corridor
-      1: Pac-Man
-      2: Wall
-      3: Ghost
-   -1: Food pellet
+      0: Empty corridor  
+      1: Pac-Man     P
+      2: Wall        #
+      3: Ghost       G
+     -1: Food pellet .
    
    Actions:
    0: UP    (-1,  0)
@@ -147,10 +149,11 @@ class PacMan:
       "#....P....#",
       "###########",
    ]
-   def __init__(self, layout=None, max_ticks=300, max_idle_ticks=80):
+   def __init__(self, layout=None, ghost= None, max_ticks=300, max_idle_ticks=80):
       self.raw_layout = layout if layout is not None else self.DEFAULT_LAYOUT
       self.height = len(self.raw_layout)
       self.width = len(self.raw_layout[0])
+      self.ghost = ghost if ghost is not None else RandomAgent()
       self.max_ticks = max_ticks
       self.max_idle_ticks = max_idle_ticks
       self.reset()
@@ -160,16 +163,70 @@ class PacMan:
       self.score = 0
       self.terminal = False
       self.ticks = -1
+      self.pacman_dir = self.RIGHT # Pacman moving right by default
+
+      # Initialize walls, food pellets, Pac-Man, and ghosts based on the layout
+      self.walls = set()
+      self.pellets = set()
+      self.ghosts = []
+
+      pac_start = None
+      # Enumerate through the layout to identify walls, pellets, Pac-Man's starting position, and ghosts
+      for r, row in enumerate(self.raw_layout):
+         for c, cell in enumerate(row):
+            if cell == '#':
+               self.walls.add((r, c))
+            elif cell == '.':
+               self.pellets.add((r, c))
+            elif cell == 'P':
+               pac_start = (r, c)
+            elif cell == 'G':  # Ghost will have a random starting direction as well, but default layout shows walls on top and bottom so the ghost can only move left or right
+               self.ghosts.append({ "position": (r, c), "direction": random.choice([self.LEFT, self.RIGHT]) })
+
+      # Where does pacman start
+      if pac_start is None:
+            pac_start = (self.height - 2, self.width // 2)  # Corresponds with the default layout
+      self.pacman = pac_start
+
+      # Where does ghost start in default layout
+      if not self.ghosts:
+         self.ghosts.append({ "position": (1, self.width // 2), "direction": random.choice([self.LEFT, self.RIGHT]) })
+
+      # Pellets
+      self.total_pellets = max(1, len(self.pellets))
+      self._updateState()
+      return self.state
+
+
 
    def getLegalMoves(self, state=None):
       if state is None:
          state = self.state
       moves = []
       return moves
-"""
-   def _updateState(self):
 
+   # _updateState needed for reset and eveything else now
+   # Same way of painting grid will hopefully be used in other games
+   # Using grid representations here
+   def _updateState(self):
+      self.state = np.zeros((self.height, self.width), dtype=int)
+      for r, c in self.walls:
+         self.state[r, c] = 2
+      for r, c in self.pellets:
+         self.state[r, c] = -1
+      for ghost in self.ghosts:
+         gr, gc = ghost['pos']
+         self.state[gr, gc] = 3
+      pr, pc = self.pacman
+      self.state[pr, pc] = 1
+
+
+
+"""
    def getLegalMoves(self, state=None):
+   
+   #separate legal moves for pacman and ghost, pacman cannot move into walls, ghost cannot move into walls 
+   def getGhostLegalMoves(self, state=None):
 
    def doMove(self, move):
 
