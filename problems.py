@@ -197,14 +197,6 @@ class PacMan:
       self._updateState()
       return self.state
 
-
-
-   def getLegalMoves(self, state=None):
-      if state is None:
-         state = self.state
-      moves = []
-      return moves
-
    # _updateState needed for reset and eveything else now
    # Same way of painting grid will hopefully be used in other games
    # Using grid representations here
@@ -220,14 +212,34 @@ class PacMan:
       pr, pc = self.pacman
       self.state[pr, pc] = 1
 
+   # Pacman cannot move into walls
+   def getLegalMoves(self, state=None):
+      if self.terminal:
+         return []
+      # Position of pacman
+      pr, pc = self.pacman
+      legal_moves = []
+      for action_idx, (dr, dc) in enumerate(self.ACTIONS):
+         new_r, new_c = pr + dr, pc + dc
+         # Inequality check to ensure new position is within bounds and not a wall
+         if 0 <= new_r < self.height and 0 <= new_c < self.width:
+            if (new_r, new_c) not in self.walls:
+               legal_moves.append(action_idx)
+      return legal_moves
+   
+   #separate legal moves for pacman and ghost, pacman cannot move into walls, ghost cannot move into walls, same logic used but does not invoke terminal state
+   def getGhostLegalMoves(self, ghost_pos):
+      gr, gc = ghost_pos
+      legal_moves = []
+      for action_idx, (dr, dc) in enumerate(self.ACTIONS):
+         new_r, new_c = gr + dr, gc + dc
+         if 0 <= new_r < self.height and 0 <= new_c < self.width:
+            if (new_r, new_c) not in self.walls:
+               legal_moves.append(action_idx)
+      return legal_moves
 
 
 """
-   def getLegalMoves(self, state=None):
-   
-   #separate legal moves for pacman and ghost, pacman cannot move into walls, ghost cannot move into walls 
-   def getGhostLegalMoves(self, state=None):
-
    def doMove(self, move):
 
    def isTerminal(self, state=None):
