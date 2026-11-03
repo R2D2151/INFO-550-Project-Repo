@@ -284,6 +284,13 @@ class PacMan:
 
       # Ghost step, random movement, ghost steps into pacman
 
+      # Same logic for ghost into pacman
+      if ghost['pos']  == self.pacman:
+         self.score -= 50
+         self.terminal = True
+         self._updateState()
+         return
+
 
 
 
