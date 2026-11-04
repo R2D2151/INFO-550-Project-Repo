@@ -9,7 +9,7 @@ import random
 from algorithms import RandomAgent
 # Originally for two player adversial games,  need to adapt to or support single agent/player
 class Game:
-    def __init__(self, problem, pZero, pOne,verbose=True):
+    def __init__(self, problem, pZero, pOne=None,verbose=True):
       self.problem = problem      
       #self.players = [pZero,pOne] defaulted to two players 
       if isinstance(pOne, bool):
@@ -56,7 +56,7 @@ class Game:
       if self.verbose:
          self.problem.showState(4000)
       return wIndex
-# New class of game: snake
+# Dropping snake development
 class Snake:
    """
    Grid:
@@ -226,14 +226,37 @@ class BallCatch:
          self.balls.append(self._spawnBall())
 
 
-
       if self.ticks >= self.max_ticks:
          self.terminal = True
       self._updateState()
 
    def isTerminal(self, state=None):
       return self.terminal
-   
+
+   # Specifically get new state after the move.  Similar to my _updateState implementation
+   # We can call this function immeidately when a move is performed to check forward
+   def getSuccessor(self, move, state=None):
+      # Same actions/moves needed in doMove
+      actions = self.ACTIONS[move]
+      next_paddle_x = max(0, min(self.width - self.paddle_width, self.paddle_x + actions))
+
+      # Establish new state with move applied
+      next_state = np.zeros((self.height, self.width), dtype=int)
+
+      # Draw paddle at next position
+      for paddle_x in range(next_paddle_x, next_paddle_x + self.paddle_width):
+         next_state[self.paddle_y, paddle_x] = 1
+
+       # Draw falling balls (only those still in flight above the paddle row)
+      for ball in self.balls:
+         next_by = int(ball['y'] + ball['speed'])
+         bx = int(ball['x'])
+         if 0 <= next_by < self.paddle_y and 0 <= bx < self.width:
+            next_state[next_by, bx] = -1
+            
+      return next_state
+
+
    # 0 for catches exceeding misses, -1 otherwise
    def getWinner(self, state=None):
       return 0 if self.score > self.misses else -1
@@ -361,7 +384,7 @@ class PacMan:
 
    # _updateState needed for reset and eveything else now
    # Same way of painting grid will hopefully be used in other games
-   # Using grid representations here
+   # Using grid representations here. Collecting the current state of the game, but getSuccessor will be a forward check of the state after a move
    def _updateState(self):
       self.state = np.zeros((self.height, self.width), dtype=int)
       for r, c in self.walls:
@@ -399,7 +422,6 @@ class PacMan:
             if (new_r, new_c) not in self.walls:
                legal_moves.append(action_idx)
       return legal_moves
-
 
    # Executing pacman movement, collision with ghost (wall collision does nothing), pellets eaten, ghost movement and it's collision with pacman.
    # Idle ticks and max ticks are also checked here, and the state is updated at the end of the function.
@@ -476,6 +498,43 @@ class PacMan:
    # Return 0 if all pellets eaten or ended with positive score (pacman dies from ghost or ticks run out), -1 otherwise.
    def getWinner(self):
       return 0 if (len(self.pellets) == 0 or self.score > 0) else -1
+
+   
+   def getSuccessor(self, move, state=None):
+      # Same move resolution as in doMove
+      move_idx = move if isinstance(move, int) else self.ACTIONS.index(move)
+      legal_moves = self.getLegalMoves()
+      if move_idx not in legal_moves:
+         move_idx = self.pacman_dir  # If illegal, continue in current direction
+
+      dr, dc = self.ACTIONS[move_idx]
+      next_pac = (self.pacman[0] + dr, self.pacman[1] + dc)
+
+      # If candidate position hits a wall or boundary, Pac-Man stays in place
+      if next_pac in self.walls or not (0 <= next_pac[0] < self.height and 0 <= next_pac[1] < self.width):
+         next_pac = self.pacman
+
+      # Establish new state with move applied (matching _updateState grid painting)
+      next_state = np.zeros((self.height, self.width), dtype=int)
+
+      # Draw walls
+      for r, c in self.walls:
+         next_state[r, c] = 2
+
+      # Draw pellets, excluding pellet if eaten by next_pac
+      for r, c in self.pellets:
+         if (r, c) != next_pac:
+            next_state[r, c] = -1
+
+      # Draw ghosts (3)
+      for ghost in self.ghosts:
+         gr, gc = ghost['position']
+         next_state[gr, gc] = 3
+
+      # Draw Pac-Man at next position (1)
+      next_state[next_pac[0], next_pac[1]] = 1
+
+      return next_state
 
    def showState(self, ms=150, state=None):
       if state is None:

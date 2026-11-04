@@ -17,10 +17,6 @@ algorithm and one player uses another. If your problem is snake, you might show 
 #demoGame = prb.Game(prb.TicTacToe(),alg.RandomAgent(),alg.RandomAgent())
 #demoGame.playGame()
 
-# snake_env = prb.Snake(height=8, width=8, num_apples=30, max_idle_ticks=30, max_ticks=40)
-# game = prb.Game(snake_env, alg.RandomAgent(), verbose=True)
-# game.playGame()
-
 # Smaller than default and trying to force collision
 DEBUG_LAYOUT = [
         "#####",
@@ -33,11 +29,11 @@ DEBUG_LAYOUT = [
         "#.P.#",
         "#####"
     ]
-#layout=DEBUG_LAYOUT, 
-# pacman_env = prb.PacMan(ghost=alg.RandomAgentGhost(), max_idle_ticks=30, max_ticks=50)
-# game = prb.Game(pacman_env, pZero=alg.RandomAgent(), pOne=alg.RandomAgentGhost(), verbose=True)
-# game.playGame()
+# layout=DEBUG_LAYOUT, 
+pacman_env = prb.PacMan(ghost=alg.RandomAgentGhost(), max_idle_ticks=30, max_ticks=100)
+game = prb.Game(pacman_env, pZero=alg.RandomAgent(), pOne=alg.RandomAgentGhost(), verbose=True)
+game.playGame()
 
-catch_env = prb.BallCatch(height=10, width=10, paddle_width=5, num_balls=5,ball_speed=1, max_misses=3, max_ticks=20)
+catch_env = prb.BallCatch(height=10, width=10, paddle_width=5, num_balls=5,ball_speed=1, max_misses=3, max_ticks=100)
 game = prb.Game(catch_env, pZero=alg.RandomAgent(), verbose=True)
 game.playGame()
