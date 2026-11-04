@@ -118,7 +118,7 @@ class BallCatch:
       self.max_misses = max_misses
       self.max_ticks = max_ticks
       self.reset()
-"""
+
    # Reset paddle position, score, misses, and falling balls
    def reset(self):
       self.ticks = -1
@@ -130,7 +130,7 @@ class BallCatch:
       self.paddle_x = (self.width - self.paddle_width) // 2
       self.paddle_y = self.height - 1
 
-      # Spawn initial balls (staggered initial heights if multiple balls) WIP
+      # Spawn initial balls (staggered initial heights if multiple balls)
       self.balls = []
       for i in range(self.num_balls):
          self.balls.append(self._spawnBall())
@@ -139,24 +139,48 @@ class BallCatch:
       return self.state
 
    # Similar to balls spawning in snake, but remember to remove ball and spawn new one accordingly
-   # Paddle doesn't grow like in snake WIP
+   # Paddle doesn't grow like in snake , spawn balls at max height of grid , random x position, speed of ball needed as well
    def _spawnBall(self):
+      speed = self.ball_speed
+      return {"x": random.randint(0, self.width), "y": self.height, "speed": speed}
 
+   # 2D integer NumPy grid representation 
    def _updateState(self):
+      self.state = np.zeros((self.height, self.width), dtype=int)
+      # Draw paddle (1), checking if the paddle is within the grid bounds before updating the state
+      for i in range(self.paddle_x, self.paddle_x + self.paddle_width):
+         if 0 <= i < self.width:
+            self.state[self.paddle_y, i] = 1
+      # Draw balls (-1), collecting x and y coordinates of each ball, checking if they are within the grid bounds before updating the state
+      for ball in self.balls:
+         by = int(ball["y"])
+         bx = int(ball["x"])
+         if 0 <= by < self.height and 0 <= bx < self.width:
+            self.state[by, bx] = -1
 
+   # Paddle can only move left or right, and cannot go beyond the grid boundaries. Return list of move, left, stay, right
    def getLegalMoves(self, state=None):
-      if state is None:
-         state = self.state
-      moves = []
+      if self.terminal:
+         return []
+      moves = [self.STAY] # Paddle can always stay in place in any state
+      # Check if paddle can move left (not at left edge)
+      if self.paddle_x > 0:
+         moves.append(self.LEFT)
+      # Check if paddle can move right (not at right edge)
+      if self.paddle_x + self.paddle_width < self.width:
+         moves.append(self.RIGHT)
       return moves
    
    def doMove(self, move):
+         self._updateState()
 
    def isTerminal(self, state=None):
       return self.terminal
-
+   
+   # 0 for catches exceeding misses, -1 otherwise
    def getWinner(self, state=None):
-"""
+      return 0 if self.score > self.misses else -1
+
 # New class of game: Pac-Man, for now ghost will also be random agent along with pacman
 class PacMan:
    """
