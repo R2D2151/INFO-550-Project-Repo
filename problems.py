@@ -91,6 +91,10 @@ class Snake:
 # New class of game: ball catch
 class BallCatch:
    """
+    Grid Encoding:
+       0: Empty cell
+       1: Paddle
+      -1: Falling ball
     Actions:
       0: Move LEFT   (dx = -1)
       1: STAY        (dx =  0)
@@ -127,7 +131,7 @@ class BallCatch:
       self.terminal = False
 
       # Center paddle along bottom row
-      self.paddle_x = (self.width - self.paddle_width) // 2
+      self.paddle_x = (self.width - self.paddle_width) // 2  # Floor for integer division to ensure paddle is centered
       self.paddle_y = self.height - 1
 
       # Spawn initial balls (staggered initial heights if multiple balls)
@@ -142,8 +146,7 @@ class BallCatch:
    # Paddle doesn't grow like in snake , spawn balls at max height of grid , random x position, speed of ball needed as well
    def _spawnBall(self):
       speed = self.ball_speed
-      return {"x": random.randint(0, self.width), "y": self.height, "speed": speed}
-
+      return {"x": random.randint(0, self.width), "y": 0, "speed": speed} # Fixed: height is 0 for top of grid
    # 2D integer NumPy grid representation 
    def _updateState(self):
       self.state = np.zeros((self.height, self.width), dtype=int)
@@ -158,7 +161,7 @@ class BallCatch:
          if 0 <= by < self.height and 0 <= bx < self.width:
             self.state[by, bx] = -1
 
-   # Paddle can only move left or right, and cannot go beyond the grid boundaries. Return list of move, left, stay, right
+   # Paddle can only move left or right, and cannot go beyond the grid boundaries. 3 moves to choose (left, stay, right), but when can be done for each
    def getLegalMoves(self, state=None):
       if self.terminal:
          return []
@@ -170,9 +173,23 @@ class BallCatch:
       if self.paddle_x + self.paddle_width < self.width:
          moves.append(self.RIGHT)
       return moves
-   
+   # In one tick: move paddle, move balls down, and check for catches or misses. 
+   # If a ball is caught, increment score and respawn the ball (maybe after a tick delay?). 
+   # If a ball is missed, increment misses and respawn the ball(maybe after a tick delay?).
+   # Increment miss counter and if it exceeds max_misses, the game ends.
+   # Check if the maximum number of ticks has been reached, and if so, end the game.
+   # Update the state at the end of the function.
    def doMove(self, move):
-         self._updateState()
+      if self.terminal:
+         return
+      self.ticks += 1
+      # Move paddle based on the action taken
+
+
+
+      if self.ticks >= self.max_ticks:
+         self.terminal = True
+      self._updateState()
 
    def isTerminal(self, state=None):
       return self.terminal
@@ -180,6 +197,10 @@ class BallCatch:
    # 0 for catches exceeding misses, -1 otherwise
    def getWinner(self, state=None):
       return 0 if self.score > self.misses else -1
+
+   def showState(self, ms=150, state=None):
+      if state is None:
+         state = self.state
 
 # New class of game: Pac-Man, for now ghost will also be random agent along with pacman
 class PacMan:
