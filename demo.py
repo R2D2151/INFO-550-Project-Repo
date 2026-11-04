@@ -33,7 +33,7 @@ DEBUG_LAYOUT = [
         "#.P.#",
         "#####"
     ]
-
-pacman_env = prb.PacMan(layout=DEBUG_LAYOUT, ghost=alg.RandomAgentGhost(), max_idle_ticks=30, max_ticks=50)
+#layout=DEBUG_LAYOUT, 
+pacman_env = prb.PacMan(ghost=alg.RandomAgentGhost(), max_idle_ticks=30, max_ticks=50)
 game = prb.Game(pacman_env, pZero=alg.RandomAgent(), pOne=alg.RandomAgentGhost(), verbose=True)
 game.playGame()

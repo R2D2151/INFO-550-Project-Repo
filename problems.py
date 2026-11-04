@@ -102,16 +102,61 @@ class BallCatch:
 
    ACTIONS = [-1, 0, 1]
    ACTION_NAMES = {0: "LEFT", 1: "STAY", 2: "RIGHT"}
-   def __init__(self):
-      self.state = np.zeros((20,20)) # 20 by 20 grid
+
+   # Initialize ball catch game environment 
+   # Grid dimensions, paddle width, number of balls, ball speed, maximum misses, and maximum ticks
+   # ball speed: traverses multiple grid points in one tick? Need to account for distance traveled when compared to the height (speed may need to be a factor of the height)
+   # max misses: not an immediate game over when missing, but maybe agent can be good enough to not miss
+   def __init__(self, height=10, width=10, paddle_width=2, num_balls=1,
+                 ball_speed=1, max_misses=3, max_ticks=200):
+      
+      self.height = height
+      self.width = width
+      self.paddle_width = paddle_width
+      self.num_balls = num_balls
+      self.ball_speed = ball_speed
+      self.max_misses = max_misses
+      self.max_ticks = max_ticks
+      self.reset()
+"""
+   # Reset paddle position, score, misses, and falling balls
+   def reset(self):
       self.ticks = -1
+      self.score = 0
+      self.misses = 0
+      self.terminal = False
+
+      # Center paddle along bottom row
+      self.paddle_x = (self.width - self.paddle_width) // 2
+      self.paddle_y = self.height - 1
+
+      # Spawn initial balls (staggered initial heights if multiple balls) WIP
+      self.balls = []
+      for i in range(self.num_balls):
+         self.balls.append(self._spawnBall())
+
+      self._updateState()
+      return self.state
+
+   # Similar to balls spawning in snake, but remember to remove ball and spawn new one accordingly
+   # Paddle doesn't grow like in snake WIP
+   def _spawnBall(self):
+
+   def _updateState(self):
 
    def getLegalMoves(self, state=None):
       if state is None:
          state = self.state
       moves = []
       return moves
+   
+   def doMove(self, move):
 
+   def isTerminal(self, state=None):
+      return self.terminal
+
+   def getWinner(self, state=None):
+"""
 # New class of game: Pac-Man, for now ghost will also be random agent along with pacman
 class PacMan:
    """
@@ -188,14 +233,14 @@ class PacMan:
             elif cell == 'G':  # Ghost will have a random starting direction as well, but default layout shows walls on top and bottom so the ghost can only move left or right
                self.ghosts.append({ "position": (r, c), "direction": random.choice([self.LEFT, self.RIGHT]) })
 
-      # Where does pacman start
-      if pac_start is None:
-            pac_start = (self.height - 2, self.width // 2)  # Corresponds with the default layout
+      # # Where does pacman start
+      # if pac_start is None:
+      #       pac_start = (self.height - 2, self.width // 2)  # Corresponds with the default layout
       self.pacman = pac_start
 
-      # Where does ghost start in default layout
-      if not self.ghosts:
-         self.ghosts.append({ "position": (1, self.width // 2), "direction": random.choice([self.LEFT, self.RIGHT]) })
+      # # Where does ghost start in default layout
+      # if not self.ghosts:
+      #    self.ghosts.append({ "position": (self.height - 2, self.width // 2), "direction": random.choice([self.LEFT, self.RIGHT]) })
 
       # Pellets
       self.total_pellets = max(1, len(self.pellets))
