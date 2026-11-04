@@ -134,19 +134,33 @@ class BallCatch:
       self.paddle_x = (self.width - self.paddle_width) // 2  # Floor for integer division to ensure paddle is centered
       self.paddle_y = self.height - 1
 
-      # Spawn initial balls (staggered initial heights if multiple balls)
+      # Spawn initial balls and check their validity in spawnBall function
       self.balls = []
       for i in range(self.num_balls):
-         self.balls.append(self._spawnBall())
+         self.balls.append(self._spawninitialBalls())
 
       self._updateState()
       return self.state
 
    # Similar to balls spawning in snake, but remember to remove ball and spawn new one accordingly
-   # Paddle doesn't grow like in snake , spawn balls at max height of grid , random x position, speed of ball needed as well
+   # Paddle doesn't grow like in snake , ball spawning needs to be staggered in height, random x position, speed of ball needed as well
+   # Don't want to make it impossible to catch the ball, so leyway is given by staggering height, but there is still a chance ball is spawned on same y position as another ball
+   # Either allow paddle to catch mutiple balls or make sure balls are staggered in height and not spawned on same y position as another ball
+   # If multi catch, then balls cannot spawn too far from each other, otherwise the paddle cannot catch multiple balls in time, so maybe a max distance between balls is needed
+   # Check should be done here since doMove will use it
+   def _spawninitialBalls(self):
+      speed = self.ball_speed
+      y = random.randint(0,1) # Starts on ceiling on one below to start
+      while True:
+         x = random.randint(0, self.width - 1)
+         # Distance between balls must be strictly smaller than paddle width (can change to even smaller distance if needed)
+         if not self.balls or all(abs(ball["x"] - x) < self.paddle_width for ball in self.balls):
+             return {"x": x, "y": y, "speed": speed}
+         
    def _spawnBall(self):
       speed = self.ball_speed
-      return {"x": random.randint(0, self.width), "y": 0, "speed": speed} # Fixed: height is 0 for top of grid
+      return {"x": random.randint(0, self.width - 1), "y": random.randint(0,1), "speed": speed} # Fallback
+   
    # 2D integer NumPy grid representation 
    def _updateState(self):
       self.state = np.zeros((self.height, self.width), dtype=int)
@@ -184,6 +198,32 @@ class BallCatch:
          return
       self.ticks += 1
       # Move paddle based on the action taken
+      # Store the actions
+      action = self.ACTIONS[move]
+      # Locate paddle position
+      self.paddle_x = max(0, min(self.width - self.paddle_width, self.paddle_x + action))
+
+      # Ball Logic
+      remaining_balls = []
+      for ball in self.balls:
+         ball["y"] += ball["speed"]  # Move the ball down by its speed (how many grid points it moves in one tick)
+
+         if int(ball["y"]) >= self.paddle_y:  # Check if the ball has reached the paddle's row
+            if self.paddle_x <= int(ball["x"]) < self.paddle_x + self.paddle_width:
+               self.score += 1  # Ball caught
+            else:
+               self.misses += 1  # Ball missed
+               if self.misses >= self.max_misses:
+                  self.terminal = True  # Game over due to too many misses
+            # Ball reached paddle: not kept in remaining_balls (effectively removed)
+         else:
+            remaining_balls.append(ball)
+
+      self.balls = remaining_balls
+
+      # Respawn new balls until we have num_balls
+      while len(self.balls) < self.num_balls:
+         self.balls.append(self._spawnBall())
 
 
 
@@ -201,6 +241,33 @@ class BallCatch:
    def showState(self, ms=150, state=None):
       if state is None:
          state = self.state
+         
+      cell_size = 50
+      screen = np.zeros((self.height * cell_size, self.width * cell_size, 3), dtype=np.uint8)
+
+      # Draw paddle along bottom row (blue/cyan rectangle)
+      px1 = self.paddle_x * cell_size
+      py1 = self.paddle_y * cell_size
+      px2 = px1 + self.paddle_width * cell_size
+      py2 = py1 + cell_size
+      cv2.rectangle(screen, (px1, py1), (px2, py2), (255, 120, 0), -1)
+
+      # Draw falling balls (yellow circles)
+      for ball in self.balls:
+         by = int(ball['y'])
+         bx = int(ball['x'])
+         if 0 <= by < self.height:
+               cx = bx * cell_size + cell_size // 2
+               cy = by * cell_size + cell_size // 2
+               cv2.circle(screen, (cx, cy), cell_size // 2 - 2, (0, 255, 255), -1)
+
+      try:
+         cv2.imshow('BallCatch', screen)
+         key = cv2.waitKey(ms) & 0xFF
+         if key == 27 or key == ord('q'):
+               self.terminal = True
+      except Exception:
+         pass
 
 # New class of game: Pac-Man, for now ghost will also be random agent along with pacman
 class PacMan:
