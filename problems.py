@@ -300,7 +300,7 @@ class PacMan:
       "###########",
       "#....#....#",
       "#.##.#.##.#",
-      "#.........#",
+      "#....G....#",
       "#.##.#.##.#",
       "#....G....#",
       "#.##.#.##.#",
@@ -391,7 +391,10 @@ class PacMan:
       return legal_moves
    
    #separate legal moves for pacman and ghost, pacman cannot move into walls, ghost cannot move into walls, same logic used but does not invoke terminal state
-   def getGhostLegalMoves(self):
+   # Adding in option of multiple ghosts, so all their positions need to be tracked
+   def getGhostLegalMoves(self, ghost_pos=None):
+      if ghost_pos is None:
+         ghost_pos = self.ghosts[0]['position']  
       gr, gc = self.ghosts[0]['position']  
       legal_moves = []
       for action_idx, (dr, dc) in enumerate(self.ACTIONS):
@@ -409,7 +412,7 @@ class PacMan:
       
       self.ticks += 1
       self.idle_ticks += 1
-      reward = 0
+      reward = 0.0
 
       # Same move tracking as snake, but pacman can turn 180 degrees
       # return list of move, up down, left, right
@@ -448,6 +451,9 @@ class PacMan:
             self.last_reward = reward # Huge reward for completion of game
             self._updateState()
             return
+      else:
+         reward -= 1.0 # slight penalty for not eating pellets
+
       
       # Ghost step, random movement, ghost steps into pacman
       # Treating like 2 players, so ghost will also have a move, but it will be random for now, and the ghost will not eat pellets or walls, just move around
@@ -459,7 +465,7 @@ class PacMan:
       # Ghost movement: each ghost moves independently as part of the environment
       for ghost in self.ghosts:
          gr, gc = ghost['position']
-         legal_ghost_moves = self.getGhostLegalMoves() # get legal ghost moves
+         legal_ghost_moves = self.getGhostLegalMoves(ghost['position']) # get legal moves for all ghosts
          ghost_move = random.choice(legal_ghost_moves) # choose move from legal list
          ghost['direction'] = ghost_move # determine direction of ghost from move chosen
          dr, dc = self.ACTIONS[ghost_move] # perform action and get how position changes 
