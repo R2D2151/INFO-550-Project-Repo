@@ -98,6 +98,7 @@ class BallCatch:
       self.score = 0
       self.misses = 0
       self.terminal = False
+      self.last_reward = 0.0  # Intialize reward for RL algorithms 
 
       # Center paddle along bottom row
       self.paddle_x = (self.width - self.paddle_width) // 2  # Floor for integer division to ensure paddle is centered
@@ -172,6 +173,9 @@ class BallCatch:
       # Locate paddle position
       self.paddle_x = max(0, min(self.width - self.paddle_width, self.paddle_x + action))
 
+      # Reward for RL
+      reward = 0.0
+
       # Ball Logic
       remaining_balls = []
       for ball in self.balls:
@@ -180,14 +184,18 @@ class BallCatch:
          if int(ball["y"]) >= self.paddle_y:  # Check if the ball has reached the paddle's row
             if self.paddle_x <= int(ball["x"]) < self.paddle_x + self.paddle_width:
                self.score += 1  # Ball caught
+               reward += 10 # Heavy reward for catching call
             else:
                self.misses += 1  # Ball missed
+               reward -= 10 # Penalty for miss
                if self.misses >= self.max_misses:
                   self.terminal = True  # Game over due to too many misses
             # Ball reached paddle: not kept in remaining_balls (effectively removed)
          else:
             remaining_balls.append(ball)
 
+      # Update reward after whether paddle catches ball or not
+      self.last_reward = reward
       self.balls = remaining_balls
 
       # Respawn new balls until we have num_balls
@@ -318,6 +326,7 @@ class PacMan:
       self.ticks = -1
       self.pacman_dir = self.RIGHT # Pacman moving right by default
       self.ghost_dir = self.LEFT # Ghost moving left by default
+      self.last_reward = 0.0
 
       # Initialize walls, food pellets, Pac-Man, and ghosts based on the layout
       self.walls = set()
@@ -400,6 +409,7 @@ class PacMan:
       
       self.ticks += 1
       self.idle_ticks += 1
+      reward = 0
 
       # Same move tracking as snake, but pacman can turn 180 degrees
       # return list of move, up down, left, right
@@ -419,6 +429,7 @@ class PacMan:
       for ghost in self.ghosts:
          if self.pacman == ghost['position']:
             self.score -= 10
+            self.last_reward -= 50 # Heavy penalty for death and update last_reward since game ends
             self.terminal = True
             self._updateState()
             return
@@ -428,10 +439,13 @@ class PacMan:
          self.pellets.remove(self.pacman)
          self.score += 1
          self.idle_ticks = 0 # Reset idle timer
+         reward += 5.0 # reward for eating pellets
          # In case all pellets are eaten, the game ends successfully, extra bonus score!
          if len(self.pellets) == 0:
             self.terminal = True
             self.score += 100 
+            reward += 100
+            self.last_reward = reward # Huge reward for completion of game
             self._updateState()
             return
       
@@ -455,6 +469,8 @@ class PacMan:
             # Check if the ghost stepped into Pac-Man
             if ghost['position'] == self.pacman:
                self.score -= 10
+               reward -= 50.0
+               self.last_reward = reward # Huge reward penalty and end game 
                self.terminal = True
                self._updateState()
                return
@@ -477,6 +493,7 @@ class PacMan:
       if self.idle_ticks >= self.max_idle_ticks or self.ticks == self.max_ticks:
          self.terminal = True
 
+      self.last_reward = reward
       self._updateState()
 
    def isTerminal(self, state=None):

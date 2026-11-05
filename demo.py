@@ -29,11 +29,17 @@ DEBUG_LAYOUT = [
         "#.P.#",
         "#####"
     ]
-# layout=DEBUG_LAYOUT, 
-pacman_env = prb.PacMan(max_idle_ticks=30, max_ticks=50)
+TINY_LAYOUT = [
+        "#####",
+        "#.G.#",
+        "#.#.#",
+        "#.P.#",
+        "#####"
+    ]
+pacman_env = prb.PacMan(max_idle_ticks=30, max_ticks=50)  # Can put in layout=DEBUG_LAYOUT or TINY_LAYOUT to try others
 game = prb.Game(pacman_env, pZero=alg.RandomAgent(), verbose=True)
 game.playGame()
 
-# catch_env = prb.BallCatch(height=10, width=10, paddle_width=5, num_balls=5,ball_speed=1, max_misses=3, max_ticks=100)
-# game = prb.Game(catch_env, pZero=alg.RandomAgent(), verbose=True)
-# game.playGame()
+catch_env = prb.BallCatch(height=10, width=10, paddle_width=5, num_balls=5,ball_speed=1, max_misses=5, max_ticks=100)
+game = prb.Game(catch_env, pZero=alg.RandomAgent(), verbose=True)
+game.playGame()
