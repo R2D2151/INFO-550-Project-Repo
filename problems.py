@@ -36,7 +36,7 @@ class Game:
             pCur = np.abs(pCur-1)  # Switch between the two players
         
       wIndex = self.problem.getWinner()
-      if len(self.players) > 1:
+      if self.problem == PacMan:
          # code for 2 player resolution (For pacman its the Pacman vs Ghost) 
          # Pacman wins if it eats all the pellets or ends with a positive score, Ghost wins if Pacman dies with 0 score
          if wIndex == -1:
@@ -427,6 +427,7 @@ class PacMan:
       if self.pacman in self.pellets:
          self.pellets.remove(self.pacman)
          self.score += 1
+         self.idle_ticks = 0 # Reset idle timer
          # In case all pellets are eaten, the game ends successfully, extra bonus score!
          if len(self.pellets) == 0:
             self.terminal = True
@@ -434,29 +435,46 @@ class PacMan:
             self._updateState()
             return
       
-
       # Ghost step, random movement, ghost steps into pacman
       # Treating like 2 players, so ghost will also have a move, but it will be random for now, and the ghost will not eat pellets or walls, just move around
-      ghost_move_idx = move if isinstance(move, int) else self.ACTIONS.index(move)
-      ghost_legal_moves = self.getGhostLegalMoves()
-      if ghost_move_idx not in ghost_legal_moves:
-         ghost_move_idx = self.ghost_dir  # If the move is illegal, continue in the current direction
+      # ghost_move_idx = move if isinstance(move, int) else self.ACTIONS.index(move)
+      # ghost_legal_moves = self.getLegalMoves()
+      # if ghost_move_idx not in ghost_legal_moves:
+      #    ghost_move_idx = self.ghost_dir  # If the move is illegal, continue in the current direction
+
+      # Ghost movement: each ghost moves independently as part of the environment
+      for ghost in self.ghosts:
+         gr, gc = ghost['position']
+         legal_ghost_moves = self.getGhostLegalMoves() # get legal ghost moves
+         ghost_move = random.choice(legal_ghost_moves) # choose move from legal list
+         ghost['direction'] = ghost_move # determine direction of ghost from move chosen
+         dr, dc = self.ACTIONS[ghost_move] # perform action and get how position changes 
+         new_ghost = (ghost['position'][0] + dr, ghost['position'][1] + dc) # calculate new position
+         if new_ghost not in self.walls:   # Check if we are not in a wall, no position change if wall is in the way
+            ghost['position'] = new_ghost  # new position is valid
+            # Check if the ghost stepped into Pac-Man
+            if ghost['position'] == self.pacman:
+               self.score -= 10
+               self.terminal = True
+               self._updateState()
+               return
+
 
       # Moving pacman to new position
-      self.ghost_dir = ghost_move_idx
-      dr, dc = self.ACTIONS[ghost_move_idx]
-      new_ghost = (ghost['position'][0] + dr, ghost['position'][1] + dc)
-      if new_ghost not in self.walls:   # Cannot move into wall, no position change if wall is in the way
-         ghost['position'] = new_ghost 
-         # Same logic for ghost into pacman
-         if ghost['position']  == self.pacman:
-            self.score -= 50
-            self.terminal = True
-            self._updateState()
-            return
+      # self.ghost_dir = ghost_move_idx
+      # dr, dc = self.ACTIONS[ghost_move_idx]
+      # new_ghost = (ghost['position'][0] + dr, ghost['position'][1] + dc)
+      # if new_ghost not in self.walls:   # Cannot move into wall, no position change if wall is in the way
+      #    ghost['position'] = new_ghost 
+      #    # Same logic for ghost into pacman
+      #    if ghost['position']  == self.pacman:
+      #       self.score -= 50
+      #       self.terminal = True
+      #       self._updateState()
+      #       return
 
-      # Timeout check
-      if self.idle_ticks >= self.max_idle_ticks:
+      # Timeout check: pacman idles too long or timer runs out
+      if self.idle_ticks >= self.max_idle_ticks or self.ticks == self.max_ticks:
          self.terminal = True
 
       self._updateState()
