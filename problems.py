@@ -56,38 +56,7 @@ class Game:
       if self.verbose:
          self.problem.showState(4000)
       return wIndex
-# Dropping snake development
-class Snake:
-   """
-   Grid:
-      0:  Empty cell
-      1:  Snake head
-      2:  Snake body
-      -1: Apple
-
-   Actions:
-      0:  Up    (-1,  0)
-      1:  Down  ( 1,  0)
-      2:  Left  ( 0, -1)
-      3:  Right ( 0,  1)
-   """
-   UP = 0
-   DOWN = 1
-   LEFT = 2
-   RIGHT = 3
-
-   ACTIONS = [(-1, 0), (1, 0), (0, -1), (0, 1)]
-   ACTION_NAMES = {0: "UP", 1: "DOWN", 2: "LEFT", 3: "RIGHT"}
-   OPPOSITES = {0: 1, 1: 0, 2: 3, 3: 2}
-   def __init__(self):
-      self.state = np.zeros((20,20)) # 20 by 20 grid
-      self.ticks = -1
-
-   def getLegalMoves(self, state=None):
-      if state is None:
-         state = self.state
-      moves = []
-      return moves
+    
 # New class of game: ball catch
 class BallCatch:
    """
