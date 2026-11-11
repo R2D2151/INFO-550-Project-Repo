@@ -261,6 +261,11 @@ class BallCatch:
                cy = by * cell_size + cell_size // 2
                cv2.circle(screen, (cx, cy), cell_size // 2 - 2, (0, 255, 255), -1)
 
+      # Draw score and misses HUD
+      score_text = f"Score: {self.score}  Misses: {self.misses}/{self.max_misses}"
+      # White foreground text for black background of catch
+      cv2.putText(screen, score_text, (12, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 1, cv2.LINE_AA)
+
       try:
          cv2.imshow('BallCatch', screen)
          key = cv2.waitKey(ms) & 0xFF
@@ -574,6 +579,13 @@ class PacMan:
       cx = pc * cell_size + cell_size // 2
       cy = pr * cell_size + cell_size // 2
       cv2.circle(screen, (cx, cy), cell_size // 2 - 2, (0, 255, 255), -1)
+
+      # Draw score and remaining pellets HUD
+      score_text = f"Score: {self.score}  Pellets: {len(self.pellets)}"
+      # Black outline/drop-shadow for readability on gray background
+      cv2.putText(screen, score_text, (12, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 3, cv2.LINE_AA)
+      
+
 
       try:
          cv2.imshow('Pac-Man', screen)

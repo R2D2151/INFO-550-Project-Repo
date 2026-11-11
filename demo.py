@@ -48,6 +48,10 @@ pacman_env = prb.PacMan(max_idle_ticks=30, max_ticks=50)  # Can put in layout=DE
 game = prb.Game(pacman_env, pZero=alg.RandomAgent(), verbose=True)
 game.playGame()
 
+pacman_env = prb.PacMan(layout = DEBUG_LAYOUT, max_idle_ticks=30, max_ticks=50)
+game = prb.Game(pacman_env, pZero=alg.RandomAgent(), verbose=True)
+game.playGame()
+
 catch_env = prb.BallCatch(height=10, width=10, paddle_width=5, num_balls=5,ball_speed=1, max_misses=5, max_ticks=100)
 game = prb.Game(catch_env, pZero=alg.RandomAgent(), verbose=True)
 game.playGame()
