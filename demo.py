@@ -55,3 +55,11 @@ game.playGame()
 catch_env = prb.BallCatch(height=10, width=10, paddle_width=5, num_balls=5,ball_speed=1, max_misses=5, max_ticks=100)
 game = prb.Game(catch_env, pZero=alg.RandomAgent(), verbose=True)
 game.playGame()
+
+catch_env = prb.BallCatch(height=20, width=20, paddle_width=10, num_balls=8,ball_speed=1, max_misses=8, max_ticks=100)
+game = prb.Game(catch_env, pZero=alg.RandomAgent(), verbose=True)
+game.playGame()
+
+catch_env = prb.BallCatch(height=15, width=20, paddle_width=10, num_balls=8,ball_speed=1, max_misses=8, max_ticks=100)
+game = prb.Game(catch_env, pZero=alg.RandomAgent(), verbose=True)
+game.playGame()

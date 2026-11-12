@@ -104,10 +104,16 @@ class BallCatch:
       self.paddle_x = (self.width - self.paddle_width) // 2  # Floor for integer division to ensure paddle is centered
       self.paddle_y = self.height - 1
 
-      # Spawn initial balls and check their validity in spawnBall function
+      # Set up continuous spaced ball spawning so at most self.num_balls are on screen at once
+      speed = self.ball_speed if self.ball_speed > 0 else 1  # Avoid dividing by zero if ball_speed <= 0
+      # Total fall ticks divided by num_balls gives how many ticks to wait between spawns (spreads balls evenly from top to bottom)
+      self.spawn_interval = (max(1, self.paddle_y) / speed) / self.num_balls if self.num_balls > 0 else float("inf")
+      self.spawn_timer = 0.0  # Tracks ticks accumulated toward the next ball spawn
+
+      # Start with only 1 ball at the top so the rest enter gradually instead of all bunching together
       self.balls = []
-      for i in range(self.num_balls):
-         self.balls.append(self._spawninitialBalls())
+      if self.num_balls > 0:
+         self.balls.append(self._spawnBall())
 
       self._updateState()
       return self.state
@@ -118,18 +124,65 @@ class BallCatch:
    # Either allow paddle to catch mutiple balls or make sure balls are staggered in height and not spawned on same y position as another ball
    # If multi catch, then balls cannot spawn too far from each other, otherwise the paddle cannot catch multiple balls in time, so maybe a max distance between balls is needed
    # Check should be done here since doMove will use it
-   def _spawninitialBalls(self):
-      speed = self.ball_speed
-      y = random.randint(0,1) # Starts on ceiling on one below to start
-      while True:
-         x = random.randint(0, self.width - 1)
-         # Distance between balls must be strictly smaller than paddle width (can change to even smaller distance if needed)
-         if not self.balls or all(abs(ball["x"] - x) < self.paddle_width for ball in self.balls):
-             return {"x": x, "y": y, "speed": speed}
-         
+   # Unified spawn ball functions added checks to 
+   # Spawn a single ball at the top row (y=0) in a column that is still reachable after catching active balls
    def _spawnBall(self):
-      speed = self.ball_speed
-      return {"x": random.randint(0, self.width - 1), "y": random.randint(0,1), "speed": speed} # Fallback
+      speed = self.ball_speed if self.ball_speed > 0 else 1  # Guard against zero/negative speed
+      y = 0  # Every newly spawned ball enters from the very top row
+      # Ceiling division (-(-a // b)) finds how many ticks the new ball needs to reach paddle_y
+      t_new = max(1, int(-(-self.paddle_y // speed)))
+      max_paddle_x = max(0, self.width - self.paddle_width)  # Furthest right the paddle's left edge can sit
+
+      # Track the range [px_min, px_max] of paddle left-edge positions that can reach every catchable ball in time
+      # At t=0 (right now), the paddle starts at its current self.paddle_x
+      px_min = max(0, min(max_paddle_x, self.paddle_x))
+      px_max = px_min
+      t_prev = 0  # Timestamp (in ticks from now) of the last constrained paddle window
+
+      # Collect active balls that will land before or with the new ball, sorted soonest-to-hit first
+      active = []
+      for ball in self.balls:
+         b_speed = ball["speed"] if ball["speed"] > 0 else 1
+         t_hit = max(1, int(-(-(self.paddle_y - ball["y"]) // b_speed)))  # Ticks remaining until this ball hits paddle_y
+         if t_hit <= t_new:
+            active.append((t_hit, int(ball["x"])))
+      active.sort()
+
+      # Walk through active balls in order of arrival and narrow down where the paddle must be at each catch
+      for t_hit, bx in active:
+         dt = max(0, t_hit - t_prev)  # Ticks available to move since the previous ball
+         # Paddle moves at most 1 column per tick, so widen reachable range by dt left and right
+         reach_min = max(0, px_min - dt)
+         reach_max = min(max_paddle_x, px_max + dt)
+         # Paddle left-edge values that cover column bx (since paddle covers [paddle_x, paddle_x + paddle_width - 1])
+         catch_min = max(0, bx - self.paddle_width + 1)
+         catch_max = min(max_paddle_x, bx)
+         # Intersection of where the paddle can reach and where it needs to be to catch this ball
+         cand_min = max(reach_min, catch_min)
+         cand_max = min(reach_max, catch_max)
+         # Only tighten the window if the ball is still reachable; if not, ignore this already-doomed ball
+         if cand_min <= cand_max:
+            px_min, px_max = cand_min, cand_max
+            t_prev = t_hit
+
+      # Project the surviving paddle window forward to t_new (when the newly spawned ball will arrive)
+      dt_new = max(0, t_new - t_prev)
+      final_px_min = max(0, px_min - dt_new)
+      final_px_max = min(max_paddle_x, px_max + dt_new)
+
+      # Convert valid paddle left-edge range into the range of ball x columns the paddle can cover
+      x_min = max(0, final_px_min)
+      x_max = min(self.width - 1, final_px_max + max(1, self.paddle_width) - 1)
+      if x_min > x_max:
+         x_min, x_max = 0, self.width - 1  # Safety fallback to full grid width
+
+      # Avoid spawning directly on top of another ball still on row 0 when other reachable columns exist
+      top_xs = {int(ball["x"]) for ball in self.balls if int(ball["y"]) == y}
+      candidates = [x for x in range(x_min, x_max + 1) if x not in top_xs]
+      if not candidates:
+         candidates = list(range(x_min, x_max + 1))
+
+      return {"x": random.choice(candidates), "y": y, "speed": self.ball_speed}
    
    # 2D integer NumPy grid representation 
    def _updateState(self):
@@ -198,9 +251,20 @@ class BallCatch:
       self.last_reward = reward
       self.balls = remaining_balls
 
-      # Respawn new balls until we have num_balls
-      while len(self.balls) < self.num_balls:
-         self.balls.append(self._spawnBall())
+      # Spawn new balls continuously on a spaced timer up to the screen cap (self.num_balls)
+      if self.num_balls > 0:
+         self.spawn_timer += 1.0  # Advance timer by 1 tick
+         if len(self.balls) == 0:
+            # If the screen is completely empty (e.g., num_balls == 1), spawn immediately and reset timer
+            self.balls.append(self._spawnBall())
+            self.spawn_timer = 0.0
+         else:
+            # Spawn only when enough ticks have elapsed (+1e-9 guards against float rounding drift)
+            while len(self.balls) < self.num_balls and self.spawn_timer + 1e-9 >= self.spawn_interval:
+               self.balls.append(self._spawnBall())
+               self.spawn_timer = max(0.0, self.spawn_timer - self.spawn_interval)  # Keep remainder for fractional intervals
+            # Cap timer while at max capacity so balls don't bank up and dump in a bunch later
+            self.spawn_timer = min(self.spawn_timer, self.spawn_interval)
 
 
       if self.ticks >= self.max_ticks:
